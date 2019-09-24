@@ -1,5 +1,5 @@
 # Blog-X
-Taking a shot at creating a blog in flask
+Blog-X is a personal blogging website where you can create and share your opinions and other users can read and comment on them. blog-x also has random quotes that inspire the users. 
 
 ## Author
 > Victor Waichigo K.
