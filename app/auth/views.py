@@ -1,71 +1,42 @@
-from flask import request, render_template, url_for, redirect
-from flask_login import login_user, logout_user
+from flask import render_template, url_for, redirect, flash, request
+from flask_login import logout_user, login_user, current_user
 
 from app.auth import auth
+from app.auth.forms import LoginForm, RegisterForm
 from app.models import User
+from ..email import mail_message
 
 
-@auth.route('/login', methods=['GET', 'POST'])
+@auth.route("/login", methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        form = request.form
-        username = form.get('username')
-        password = form.get('password')
-        user = User.query.filter_by(username=username).first()
-        if user is None:
-            error = 'The user or password is not correct'
-            return render_template('auth/login.html', error=error)
-        is_correct_pass = user.check_password(password)
-        print(is_correct_pass)
-        if not is_correct_pass:
-            error = 'The username or password is not correct'
-            return render_template('auth/login.html', error=error)
-        login_user(user)
-        return url_for('/')
-    return render_template('/auth/login.html')
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember.data)
+            next_url = request.args.get('next')
+            return redirect(next_url) if next_url else redirect(url_for('main.index'))
+        else:
+            flash('Login Unsuccessful. Please check email and password', 'danger')
+    return render_template('auth/login.html', title='Login', form=form)
 
 
 @auth.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if request.method == 'POST':
-        form = request.form
-        username = form.get('username')
-        email = form.get('email')
-        password = form.get('password')
-        confirm_password = form.get('confirm_password')
-        # Check for empty inputs
-        if username is None and email is None and password is None and confirm_password is None:
-            error = 'You cannot submit blank fields'
-            return render_template('auth/signup.html', error=error)
-        # Check for '' in inputs
-        if ' ' in username:
-            error = 'Username cannot be an empty string'
-            return render_template('auth/signup.html', error=error)
-        # Check if password == confirm password
-        if password != confirm_password:
-            error = 'The passwords do not match'
-            return render_template('auth/signup.html', error=error)
-        else:
-            # Login the user
-            user = User.query.filter_by(username=username).all()
-            # Check is a username already exists
-            if user is not None:
-                error = 'A user with that username already exists'
-                return render_template('auth/signup.html', error=error)
-            user = User.query.filter_by(email=email).all()
-            # Check if an email already exists
-            if user is not None:
-                error = 'A user with that email already exists'
-                return render_template('auth/signup.html', error=error)
-            # Set all fields to a user instance
-            user = User(
-                username=username,
-                email=email
-            )
-            user.set_password(password)
-            user.save()
-            return redirect(url_for('auth.login'))
-    return render_template('auth/signup.html')
+    form = RegisterForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        email = form.email.data
+        password = form.password.data
+        user = User(username=username, email=email)
+        user.set_password(password)
+        user.save()
+        mail_message("Welcome to Blogx", "email/welcome_user", user.email, user=user)
+        flash(f'Account created for {form.username.data}!', 'success')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/signup.html', title='Sign Up', form=form, current_user=current_user)
 
 
 @auth.route('/logout')
