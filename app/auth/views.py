@@ -32,8 +32,8 @@ def signup():
         password = form.password.data
         user = User(username=username, email=email)
         user.set_password(password)
-        # user.save()
         mail_message("Welcome to Blogx", "email/welcome_user", user.email, {"user":user})
+        user.save()
         flash(f'Account created for {form.username.data}!', 'success')
         return redirect(url_for('auth.login'))
     return render_template('auth/signup.html', title='Sign Up', form=form, current_user=current_user)
