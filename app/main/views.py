@@ -69,6 +69,7 @@ def new_post():
 
 
 @main.route("/post/<int:post_id>")
+@login_required
 def mypost(post_id):
     comments = Comment.query.filter_by(post_id=post_id).all()
     print(comments)

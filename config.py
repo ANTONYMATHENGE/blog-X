@@ -7,7 +7,7 @@ ld()
 
 class Config:
     debug = True
-    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://vick:p@127.0.0.1:5432/blogx'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SECRET_KEY = os.environ.get('SECRET_KEY')
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
